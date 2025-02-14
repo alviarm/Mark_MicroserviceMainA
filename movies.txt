@@ -1,0 +1,4 @@
+# movies.txt
+The Matrix|Action|Sci-Fi|2024-02-15
+Inception|Action|Mind-bending|2024-02-14
+Frozen|Animation|Musical|2024-02-10
