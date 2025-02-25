@@ -46,7 +46,7 @@ JSONCopy
 }
 
 3. UML Sequence Diagram
-![alt text](https://i.imgur.com/dFc40aM.png)
+![UML Sequence Diagram](images/UML_diagram.png)
 Description:
 
     Client → Microservice: GET /search?genre=action&limit=3
