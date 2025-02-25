@@ -46,7 +46,7 @@ JSONCopy
 }
 
 3. UML Sequence Diagram
-![UML Sequence Diagram](images/UML_diagram.png)
+![UML Sequence Diagram](https://raw.githubusercontent.com/alviarm/Mark_MicroserviceMainA/main/images/UML_diagram.png)
 Description:
 
     Client → Microservice: GET /search?genre=action&limit=3
@@ -63,7 +63,7 @@ Description:
 
 Git Repository:
 Clone this repository for full code and dependencies:
-git clone <https://github.com/[USERNAME]/microservice-a.git>
+git clone <https://github.com/alviarm/Mark_MicroserviceMainA.git>
 Run the service locally:
 bashCopy
 
