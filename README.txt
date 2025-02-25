@@ -1,25 +1,34 @@
-# Movie Recommendation Microservice
+README: Communication Contract for Microservice A
+Version: 1.2
+1. Request Data Instructions
+Endpoint:
+GET /search
+Parameters:
 
-## Key Features
-- **Genre-based movie search** with chronological sorting (newest first)
-- **Dynamic input validation** based on `movies.txt` contents
-- **Rate limiting** (100 requests/day per IP)
-- **File health monitoring** system
-- Async file operations for high performance
+    genre: String (required) - Genre name (minimum 3 characters, case-insensitive).
+    limit: Integer (optional) - Number of results to return (default: 5, max: 100).
 
-## Service Endpoints
+Example Call (Python):
+PythonCopy
 
-### 1. Movie Search (`GET /search`)
-**Parameters**:
-```http
-GET /search?genre=Action&limit=5
+import requests
 
-Requirements:
+response = requests.get(
+    "http://[YOUR_DOMAIN]/search",
+    params={"genre": "action", "limit": 3}
+)
+print(response.json())
 
-    movies.txt must exist and follow exact format
-    Minimum 3-character genres enforced by API
+2. Response Data Instructions
+Format: JSON
 
-Response:
+    status: HTTP status code (200, 400, 404, 429).
+    source: "movies.txt" (data source).
+    results: List of movie titles.
+    count: Number of results.
+
+Example Success Response:
+JSONCopy
 
 {
   "status": 200,
@@ -28,80 +37,35 @@ Response:
   "count": 2
 }
 
-2. Health Check (GET /file_healthcheck)
+Example Error Response (Invalid Genre):
+JSONCopy
 
-Monitoring Logic:
+{
+  "status": 400,
+  "error": "Invalid genre. Valid options: action, animation"
+}
 
-if not os.path.exists("movies.txt"): → Triggers 500 error
-if file unreadable → Error details in response
+3. UML Sequence Diagram
+https://i.imgur.com/dFc40aM.png
+Description:
 
-movies.txt Format
+    Client → Microservice: GET /search?genre=action&limit=3
+    Microservice (Self): Validate parameters and rate limits.
+    Microservice → movies.txt: Asynchronous read.
+    Microservice (Self): Filter and sort movies.
+    Microservice → Client: Return JSON response (200) or error (404, 400, 429).
 
-# Comment lines start with #
-Title|Genre|Mood|AddedDate
-The Matrix|Action|Sci-Fi|2024-02-15
+4. Additional Notes
 
-3 Requirements:
+    Rate Limiting: 100 requests/day/IP.
+    File Format: movies.txt must use pipe (|) delimiters and lowercase genres.
+    Error Handling: Returns detailed error messages (e.g., 404 for missing files).
 
-    Pipe-separated (|) format
-    Case-insensitive genres (stored lowercase)
-    Strict YYYY-MM-DD date format
+Git Repository:
+Clone this repository for full code and dependencies:
+git clone <https://github.com/[USERNAME]/microservice-a.git>
+Run the service locally:
+bashCopy
 
-Setup Instructions
-
-    Install dependencies:
-
-pip3 install fastapi uvicorn slowapi aiofiles
-
-    Start server:
-
-python3 -m uvicorn main:app --reload
-
-    Verify service:
-
-curl http://localhost:8000/file_healthcheck
-
-Error Handling
-Error Case	Status Code	Response Example
-Missing movies.txt	404	"Contact Mark to restore backup"
-Invalid genre	400	"Valid options: action, animation"
-Rate limit exceeded	429	"Rate limit exceeded"
-Maintenance Guide
-
-    Updating Movies:
-        Modify movies.txt directly → Changes take effect immediately on next request
-        Backup recommended before bulk edits
-
-    Modifying Rate Limits:
-
-# Change in main.py
-@limiter.limit("200/day")  # Updated rate limit
-
-    Recommended Monitoring:
-
-watch -n 3600 curl http://localhost:8000/file_healthcheck  # Hourly checks
-
-Testing Suite
-
-Sample test cases (run these sequentially):
-
-    Valid request:
-
-curl "http://localhost:8000/search?genre=Action&limit=1"
-
-    Invalid genre test:
-
-curl "http://localhost:8000/search?genre=Romance"
-
-    File failure test:
-
-mv movies.txt movies.backup && curl "http://localhost:8000/search?genre=Action"
-
-OpenAPI Docs
-
- available when service is running.
-Security Requirements
-
-    Keep movies.txt in secure directory with read-only permissions
-    Review rate limit threshold based on usage metrics
-    Do not modify CORS settings without VPN implementation
+pip install fastapi uvicorn slowapi aiofiles
+uvicorn main:app --reload
