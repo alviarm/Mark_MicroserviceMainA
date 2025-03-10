@@ -1,4 +1,3 @@
-# main.py
 from datetime import date, datetime
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,9 +23,9 @@ app.add_middleware(
 
 
 async def parse_movies() -> tuple[list[dict], list[str]]:
-    """Parse movies.txt with async I/O and error handling"""
+    """Parse content.txt with async I/O and error handling"""
     try:
-        async with aiofiles.open("movies.txt", mode="r") as f:
+        async with aiofiles.open("content.txt", mode="r") as f:
             content = await f.read()
 
             movies = []
@@ -38,35 +37,32 @@ async def parse_movies() -> tuple[list[dict], list[str]]:
                     continue
 
                 parts = line.split("|")
-                if len(parts) < 4:
+                if len(parts) < 6:
                     continue
 
-                try:
-                    movies.append(
-                        {
-                            "title": parts[0],
-                            "genre": parts[1].strip().lower(),
-                            "mood": parts[2],
-                            "added_date": datetime.strptime(
-                                parts[3], "%Y-%m-%d"
-                            ).date(),
-                        }
-                    )
-                    valid_genres.add(parts[1].strip().lower())
-                except ValueError:
-                    continue
+                movies.append(
+                    {
+                        "title": parts[0],
+                        "genre": parts[1].strip().lower(),
+                        "streaming_service": parts[2],
+                        "type": parts[3],
+                        "details": parts[4],
+                        "length": parts[5],
+                    }
+                )
+                valid_genres.add(parts[1].strip().lower())
 
             return movies, sorted(valid_genres)
 
     except FileNotFoundError:
         raise HTTPException(
             status_code=404,
-            detail="Movie database unavailable. Contact Mark to restore backup.",
+            detail="Content database unavailable. Contact Mark to restore backup.",
         )
 
 
 @app.get("/search")
-@limiter.limit("100/day")
+@limiter.limit("5/minute")
 async def search_movies(
     request: Request,
     genre: str = Query(..., min_length=3),
@@ -84,18 +80,17 @@ async def search_movies(
 
     filtered = [m["title"] for m in movies if m["genre"] == genre_lower]
 
-    # Sort chronologically descending (new movies first)
+    # Sort alphabetically by title
     sorted_movies = sorted(
         [m for m in movies if m["genre"] == genre_lower],
-        key=lambda x: x["added_date"],
-        reverse=True,
+        key=lambda x: x["title"].lower(),
     )[:limit]
 
     results = [m["title"] for m in sorted_movies]
 
     return {
         "status": 200,
-        "source": "movies.txt",
+        "source": "content.txt",
         "results": results,
         "count": len(results),
     }
@@ -105,10 +100,10 @@ async def search_movies(
 async def health_check():
     """Endpoint for monitoring file status"""
     try:
-        if not os.path.exists("movies.txt"):
+        if not os.path.exists("content.txt"):
             raise FileNotFoundError
 
-        async with aiofiles.open("movies.txt", "r") as f:
+        async with aiofiles.open("content.txt", mode="r") as f:
             await f.read()
 
         return {"status": "healthy", "last_checked": datetime.now().isoformat()}
